@@ -8,3 +8,5 @@ runs/
 *.pkl
 
 test.ipynb
+logs/*
+checkpoints/*
