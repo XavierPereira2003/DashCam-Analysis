@@ -236,14 +236,14 @@ if __name__ == '__main__':
     num_labels = len(id2label)
 
     # Create DataLoaders with the provided batch size.
-    train_dataloader = DataLoader(train_dataset, collate_fn=collate_fn, batch_size=args.batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, collate_fn=collate_fn, batch_size=args.batch_size)
+    train_dataloader: DataLoader = DataLoader(train_dataset, collate_fn=collate_fn, batch_size=args.batch_size, shuffle=True, num_workers=7)
+    val_dataloader: DataLoader = DataLoader(val_dataset, collate_fn=collate_fn, batch_size=args.batch_size, num_workers=7)
 
     # Initialise the model.
     model = Detr(lr=args.lr, lr_backbone=args.lr_backbone, weight_decay=args.weight_decay, num_labels=num_labels)
 
     # Initialise TensorBoard logger.
-    logger = TensorBoardLogger("logs", name="deter")
+    logger = TensorBoardLogger("", name="logs")
 
     # Initialise ModelCheckpoint callback.
     checkpoint_callback = ModelCheckpoint(
@@ -251,7 +251,7 @@ if __name__ == '__main__':
         filename="detr-{epoch:02d}-{validation_loss:.2f}",
         monitor="validation_loss",
         mode="min",
-        save_top_k=1,
+        save_top_k=5,
         verbose=True
     )
 
