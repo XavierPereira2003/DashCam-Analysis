@@ -10,3 +10,4 @@ runs/
 test.ipynb
 logs/*
 checkpoints/*
+*/*.safetensors
