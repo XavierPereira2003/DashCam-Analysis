@@ -6,3 +6,5 @@ runs/
 *.json
 
 *.pkl
+
+test.ipynb
