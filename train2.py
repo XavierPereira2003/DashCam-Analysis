@@ -155,6 +155,9 @@ if __name__ == '__main__':
     train_ann_file = "train_output.json"
     val_ann_file = "val_output.json"
 
+    save_path = f"models:{args.epochs}"
+    os.makedirs(save_path, exist_ok=True)
+    print(f"Saving model checkpoints to '{save_path}'.")
     # Initialize the DETR image processor
     processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
 
@@ -209,8 +212,7 @@ if __name__ == '__main__':
     # Start training.
     trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
-    save_path = "models"
-    os.makedirs(save_path, exist_ok=True)
+    
     state_dict = model.model.state_dict()
     safetensors_path = os.path.join(save_path, "model.safetensors")
     save_file(state_dict, safetensors_path)

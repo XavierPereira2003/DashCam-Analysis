@@ -11,5 +11,5 @@ test.ipynb
 logs/*
 checkpoints/*
 
-
+*.ckpt
 *.safetensors

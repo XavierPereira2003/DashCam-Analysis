@@ -173,7 +173,11 @@ if __name__ == '__main__':
     with open("label2id.json", 'r') as f:
         label2id = json.load(f)
     num_labels = len(label2id)
-
+    
+    save_path = f"Fine-Tuned-model-epochs-{args.epochs}"
+    os.makedirs(save_path, exist_ok=True)
+    print(f"Saving model checkpoints to '{save_path}'.")
+    
     # Create DataLoaders with the provided batch size.
     train_dataloader: DataLoader = DataLoader(train_dataset, collate_fn=collate_fn, batch_size=args.batch_size, shuffle=True, num_workers=7)
     val_dataloader: DataLoader = DataLoader(val_dataset, collate_fn=collate_fn, batch_size=args.batch_size, num_workers=7)
@@ -186,7 +190,7 @@ if __name__ == '__main__':
 
     # Initialise ModelCheckpoint callback.
     checkpoint_callback = ModelCheckpoint(
-        dirpath="checkpoints",
+        dirpath=save_path+"checkpoints",
         filename="detr-{epoch:02d}-{validation_loss:.2f}",
         monitor="validation_loss",
         mode="min",
@@ -206,8 +210,7 @@ if __name__ == '__main__':
     # Start training.
     trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
-    save_path = "models"
-    os.makedirs(save_path, exist_ok=True)
+   
     state_dict = model.model.state_dict()
     safetensors_path = os.path.join(save_path, "model.safetensors")
     save_file(state_dict, safetensors_path)
