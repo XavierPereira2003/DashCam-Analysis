@@ -12,7 +12,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from safetensors.torch import save_file  # For saving model weights in safetensors format
 
 # Custom dataset class for object detection using COCO annotations.
-class IDDCocoDetection(torchvision.datasets.CocoDetection):
+class IDDCocoDetection(torchvision.datasets.CocoDetection): 
     """
     A custom dataset class for loading and processing COCO-style datasets with 
     additional support for a processor and optional transformations.
@@ -24,26 +24,6 @@ class IDDCocoDetection(torchvision.datasets.CocoDetection):
         transforms (callable, optional): Optional transformations to apply to the 
             images and targets. Defaults to None.
 
-    Attributes:
-        data (dict): Parsed JSON data from the annotations file.
-        img_folder (str): Path to the folder containing the images.
-        processor (callable): The processor function for encoding.
-        transforms (callable, optional): Optional transformations.
-        images (dict): A dictionary mapping image IDs to image metadata.
-        annotations (dict): A dictionary grouping annotations by image ID.
-
-    Methods:
-        __len__(): Returns the number of images in the dataset.
-        __getitem__(idx): Retrieves the processed image and target for the given index.
-
-    Example:
-        >>> dataset = IDDCocoDetection(
-        ...     img_folder="/path/to/images",
-        ...     annotations="/path/to/annotations.json",
-        ...     processor=custom_processor,
-        ...     transforms=custom_transforms
-        ... )
-        >>> img, target = dataset[0]
     """
     def __init__(self, img_folder, annotations, processor, transforms=None):
         super().__init__(img_folder, annFile=annotations, transforms=transforms)
@@ -103,60 +83,16 @@ class Detr(pl.LightningModule):
         lr_backbone (float): Learning rate for the backbone parameters.
         weight_decay (float): Weight decay (L2 regularization) for the optimizer.
         num_labels (int): Number of object classes for detection.
-
-    Methods:
-        forward(pixel_values, pixel_mask):
-            Performs a forward pass through the DETR model.
-
-            Args:
-                pixel_values (torch.Tensor): Input image tensor.
-                pixel_mask (torch.Tensor): Mask tensor indicating valid image regions.
-
-            Returns:
-                outputs: Model outputs including predictions.
-
-        common_step(batch, batch_idx):
-            A common step used for both training and validation.
-
-            Args:
-                batch (dict): A batch of data containing pixel values, masks, and labels.
-                batch_idx (int): Index of the batch.
-
-            Returns:
-                tuple: Loss and a dictionary of individual loss components.
-
-        training_step(batch, batch_idx):
-            Defines the training step logic.
-
-            Args:
-                batch (dict): A batch of training data.
-                batch_idx (int): Index of the batch.
-
-            Returns:
-                torch.Tensor: Training loss.
-
-        validation_step(batch, batch_idx):
-            Defines the validation step logic.
-
-            Args:
-                batch (dict): A batch of validation data.
-                batch_idx (int): Index of the batch.
-
-            Returns:
-                torch.Tensor: Validation loss.
-
-        configure_optimizers():
-            Configures the optimizer for training.
-
-            Returns:
-                torch.optim.Optimizer: Configured optimizer.
-    """
-    def __init__(self, lr, lr_backbone, weight_decay, num_labels):
+"""
+    
+    def __init__(self, lr, lr_backbone, weight_decay, num_labels, id2label, label2id):
         super().__init__()
         self.model = DetrForObjectDetection.from_pretrained(
             "facebook/detr-resnet-50",
             revision="no_timm",
             num_labels=num_labels,
+            id2label=id2label,
+            label2id=label2id,
             ignore_mismatched_sizes=True
         )
         self.lr = lr
@@ -231,27 +167,34 @@ if __name__ == '__main__':
         processor=processor
     )
 
-    # Retrieve category mapping from the COCO annotations.
-    id2label = {cat["id"]: cat["name"] for cat in train_dataset.coco.cats.values()}
-    num_labels = len(id2label)
-
+    # Load custom category mappings from JSON files
+    with open("id2label.json", 'r') as f:
+        id2label = {int(k): v for k, v in json.load(f).items()}
+    with open("label2id.json", 'r') as f:
+        label2id = json.load(f)
+    num_labels = len(label2id)
+    
+    save_path = f"Fine-Tuned-model-epochs-{args.epochs}"
+    os.makedirs(save_path, exist_ok=True)
+    print(f"Saving model checkpoints to '{save_path}'.")
+    
     # Create DataLoaders with the provided batch size.
     train_dataloader: DataLoader = DataLoader(train_dataset, collate_fn=collate_fn, batch_size=args.batch_size, shuffle=True, num_workers=7)
     val_dataloader: DataLoader = DataLoader(val_dataset, collate_fn=collate_fn, batch_size=args.batch_size, num_workers=7)
 
     # Initialise the model.
-    model = Detr(lr=args.lr, lr_backbone=args.lr_backbone, weight_decay=args.weight_decay, num_labels=num_labels)
+    model = Detr(lr=args.lr, lr_backbone=args.lr_backbone, weight_decay=args.weight_decay, num_labels=num_labels, id2label=id2label, label2id=label2id)
 
     # Initialise TensorBoard logger.
     logger = TensorBoardLogger("", name="logs")
 
     # Initialise ModelCheckpoint callback.
     checkpoint_callback = ModelCheckpoint(
-        dirpath="checkpoints",
+        dirpath=save_path+"checkpoints",
         filename="detr-{epoch:02d}-{validation_loss:.2f}",
         monitor="validation_loss",
         mode="min",
-        save_top_k=5,
+        save_top_k=2,
         verbose=True
     )
 
@@ -267,10 +210,21 @@ if __name__ == '__main__':
     # Start training.
     trainer.fit(model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
-    # Save the final model using safetensors.
-    save_path = "Iddk-deterministic"
-    os.makedirs(save_path, exist_ok=True)
+   
     state_dict = model.model.state_dict()
     safetensors_path = os.path.join(save_path, "model.safetensors")
     save_file(state_dict, safetensors_path)
+
+    # Save the id2label and label2id mappings
+    with open(os.path.join(save_path, "id2label.json"), 'w') as f:
+        json.dump({str(k): v for k, v in id2label.items()}, f, indent=2)
+        
+    with open(os.path.join(save_path, "label2id.json"), 'w') as f:
+        json.dump(label2id, f, indent=2)
+
+    # Save the processor configuration
+    processor.save_pretrained(save_path)
+
     print(f"Final model saved to '{safetensors_path}'.")
+    print(f"Label mappings and processor configuration saved to '{save_path}'.")
+
