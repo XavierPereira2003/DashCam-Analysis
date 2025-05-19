@@ -45,22 +45,31 @@ if __name__ == "__main__":
         default="output",
         help="Path to the output folder"
     )
+
     parser.add_argument(
-        "--output_images",
-        type=bool,
-        default=True,
-        help="Save images with detections"
+        "--deice",
+        type=str,
+        default=None,
+        help="Device to run the model on. If not specified, it will use the default device (GPU if available, otherwise CPU)."
     )
 
+    parser.add_argument(
+        "--generate_fig",
+        type=bool,
+        default=False,
+        help="Generate figure with detections"
+    )
     args = parser.parse_args()
 
     images = extract_images(args.folder)
-    detector= Models_Interface.DashCamAnalyzer()
+    detector= Models_Interface.DashCamAnalyzer(device=args.device)
+    results=[]
     if not os.path.exists(args.folder):
         logger.error(f"Folder {str(args.folder)} does not exist.")
         sys.exit(1)
     print(f"Found {len(images)} images in {args.folder}")
     logger.info(f"Found {len(images)} images in {args.folder}")
+
     if len(images) == 0:
         print("No images found in the folder.")
         logger.info("No images found in the folder.")
@@ -72,8 +81,10 @@ if __name__ == "__main__":
                 msg = f"Processing image: {image}"
                 logger.info(msg)
                 try:
-                    fig = detector.evaluate(image)
-                    if args.output_images:
+                    result = detector.evaluate(image)
+                    results.append(result)
+                    if args.gemerate_fig:
+                        fig = detector.visualize(image, result)
                         fig.savefig(os.path.join("output", "images", os.path.basename(image)))
                 except Exception as e:
                     err_msg = f"Error processing image {image}: {e}"

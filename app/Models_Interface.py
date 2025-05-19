@@ -24,7 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 class DashCamAnalyzer:
-    def __init__(self, model_dir="Models", device=None):
+    def __init__(self, device=None):
+        """
+        Initialize the DashCamAnalyzer with the model directory and device.
+
+        Args:
+            device (_type_, optional): Wheather the model should run on the CPU or GPU. Defaults to None.
+        """
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
         # Load processor and label maps
@@ -60,11 +66,8 @@ class DashCamAnalyzer:
         self.model.to(self.device)
         logger.info(f"Model Succesfully loaded on {self.device}")
     
-    def evaluate(self, image_path):
-        COLORS = [
-            'red', 'green', 'blue', 'yellow', 'magenta', 'cyan',
-            'orange', 'purple', 'lime', 'teal', 'brown', 'pink'
-        ]
+    def evaluate(self, image_path, generate_fig=True):
+        
         # Load image
         image = Image.open(image_path).convert("RGB")
         # Preprocess the image and make predictions
@@ -78,6 +81,16 @@ class DashCamAnalyzer:
             threshold=0.9
         )
         results = postprocessed_outputs[0]
+        return {"scores": results["scores"],
+                "labels": results["labels"],
+                "boxes": results['boxes']}
+    
+    def visualize(self, image_path, results):
+        COLORS = [
+            'red', 'green', 'blue', 'yellow', 'magenta', 'cyan',
+            'orange', 'purple', 'lime', 'teal', 'brown', 'pink'
+        ]
+        image = Image.open(image_path).convert("RGB")
         scores, labels, boxes = results['scores'], results['labels'], results['boxes']
         plt.figure(figsize=(16, 10))
         plt.imshow(image)
@@ -95,3 +108,9 @@ class DashCamAnalyzer:
                     bbox=dict(facecolor='yellow', alpha=0.5))
         plt.axis('off')
         return plt.gcf()
+    
+    def get_id2label(self):
+        return self.id2label
+    
+    def get_label2id(self):
+        return self.label2id
