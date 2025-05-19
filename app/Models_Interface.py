@@ -1,11 +1,27 @@
 import os
 import json
 import torch
+import matplotlib.pyplot as plt
+
 from PIL import Image
 import json
-from transformers import DetrImageProcessor, DetrForObjectDetection
+import logging
+
+from transformers import DetrImageProcessor, DetrForObjectDetection, logging as transformers_logging
 from safetensors.torch import load_file
-import matplotlib.pyplot as plt
+
+import warnings
+# Suppress all warnings and HF transformer logs
+warnings.filterwarnings("ignore")
+transformers_logging.set_verbosity_error()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    
+)
+logger = logging.getLogger(__name__)
+
 
 class DashCamAnalyzer:
     def __init__(self, model_dir="Models", device=None):
@@ -15,7 +31,8 @@ class DashCamAnalyzer:
         self.processor = DetrImageProcessor.from_pretrained(
             "facebook/detr-resnet-50"
         )
-        print(os.path.join(model_dir, "id2label.json"))
+        logger.debug(os.path.join(model_dir, "id2label.json"))
+
         self.id2label = json.load(open(os.path.join(model_dir, "id2label.json")))
         self.id2label = {int(k): v for k, v in self.id2label.items()}
         self.label2id = json.load(open(os.path.join(model_dir, "label2id.json")))
@@ -29,7 +46,7 @@ class DashCamAnalyzer:
             id2label=self.id2label,
             label2id=self.label2id,
             ignore_mismatched_sizes=True 
-           )
+        )
 
         # Load fine‐tuned weights
         state_dict = load_file(os.path.join(model_dir, "model.safetensors"))
@@ -39,12 +56,11 @@ class DashCamAnalyzer:
         for param in self.model.parameters():
             param.requires_grad_(False)
 
-
         self.model.eval()
         self.model.to(self.device)
+        logger.info(f"Model Succesfully loaded on {self.device}")
     
     def evaluate(self, image_path):
-        print(self.model.config.id2label)
         COLORS = [
             'red', 'green', 'blue', 'yellow', 'magenta', 'cyan',
             'orange', 'purple', 'lime', 'teal', 'brown', 'pink'
@@ -71,13 +87,11 @@ class DashCamAnalyzer:
             scores.tolist(), labels.tolist(), boxes.tolist(), colors
         ):
             ax.add_patch(plt.Rectangle(
-            (xmin, ymin), xmax - xmin, ymax - ymin,
-            fill=False, color=c, linewidth=3
+                (xmin, ymin), xmax - xmin, ymax - ymin,
+                fill=False, color=c, linewidth=3
             ))
             text = f'{self.model.config.id2label[label]}: {score:.2f}'
             ax.text(xmin, ymin, text, fontsize=15,
-                bbox=dict(facecolor='yellow', alpha=0.5))
+                    bbox=dict(facecolor='yellow', alpha=0.5))
         plt.axis('off')
         return plt.gcf()
-
-
