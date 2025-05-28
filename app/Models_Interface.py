@@ -4,7 +4,6 @@ import torch
 import matplotlib.pyplot as plt
 
 from PIL import Image
-import json
 import logging
 
 from transformers import DetrImageProcessor, DetrForObjectDetection, logging as transformers_logging
@@ -37,6 +36,7 @@ class DashCamAnalyzer:
         self.processor = DetrImageProcessor.from_pretrained(
             "facebook/detr-resnet-50"
         )
+        model_dir = os.path.join(os.path.dirname(__file__), "Models")
         logger.debug(os.path.join(model_dir, "id2label.json"))
 
         self.id2label = json.load(open(os.path.join(model_dir, "id2label.json")))
@@ -114,3 +114,6 @@ class DashCamAnalyzer:
     
     def get_label2id(self):
         return self.label2id
+    
+    def get_label(self, id):
+        return self.id2label[id]

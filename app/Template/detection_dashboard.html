@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detection Analysis Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Detection Analysis Dashboard</h1>
+            <p>Comprehensive Object Detection Performance Report</p>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Loading analysis data...
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation" id="tabNavigation" style="display: none;">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('analysis')">
+                    📊 Analysis Report
+                </button>
+                <button class="tab-button" onclick="switchTab('predictions')" id="predictionsTab">
+                    🖼️ Prediction Images
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard" id="dashboard">
+            <!-- Overall Statistics -->
+            <div class="stats-grid" id="overallStats">
+            </div>
+
+            <!-- Confidence Thresholds -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">📊 Confidence Thresholds</div>
+                    <div class="section-subtitle">Detection count distribution across confidence levels</div>
+                </div>
+                <div class="section-content">
+                    <div class="threshold-grid" id="thresholdGrid">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Performance Rankings -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">🏆 Class Performance Rankings</div>
+                    <div class="section-subtitle">Detailed performance metrics for each detected class</div>
+                </div>
+                <div class="section-content">
+                    <table class="class-table" id="classTable">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Detections</th>
+                                <th>Mean Confidence</th>
+                                <th>Std Deviation</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top & Bottom Performers -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 50px;">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">🥇 Top Performers</div>
+                        <div class="section-subtitle">Highest confidence classes</div>
+                    </div>
+                    <div class="section-content">
+                        <table class="class-table" id="topPerformers">
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">⚠️ Worst Performers</div>
+                        <div class="section-subtitle">Lowest confidence classes</div>
+                    </div>
+                    <div class="section-content">
+                        <table class="class-table" id="bottomPerformers">
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Plots -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">📈 Visualization Plots</div>
+                    <div class="section-subtitle">Graphical analysis of detection performance</div>
+                </div>
+                <div class="section-content">
+                    <div class="plots-grid" id="plotsGrid">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predictions Tab Content -->
+        <div class="predictions-content" id="predictionsContent" style="display: none;">
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">🖼️ Prediction Images</div>
+                    <div class="section-subtitle">Object detection results visualized on original images</div>
+                </div>
+                <div class="section-content">
+                    <div class="predictions-grid" id="predictionsGrid">
+                        <div class="no-predictions" id="noPredictions">
+                            <div class="no-predictions-icon">📷</div>
+                            <h3>No Prediction Images Available</h3>
+                            <p>Prediction images will appear here when generated using the --generate_fig option.</p>
+                            <div class="no-predictions-code">
+                                <code>python app.py --folder /path/to/images --generate_fig True</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="error" id="error" style="display: none;">
+            <h3>⚠️ Unable to Load Data</h3>
+            <p>Please ensure the JSON file is available and accessible.</p>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <img id="modalImage" src="" alt="">
+            <div id="modalCaption" class="modal-caption"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
