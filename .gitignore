@@ -11,6 +11,8 @@ test.ipynb
 logs/*
 checkpoints/*
 app/test
+app/output
 
 *.ckpt
 *.safetensors
+*.log
