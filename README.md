@@ -140,7 +140,3 @@ The system provides comprehensive analytics including:
 
 - Integrate additional model architectures
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
