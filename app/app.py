@@ -97,7 +97,7 @@ def display_dashboard_info(output_dir, port):
     print(f"   Local:    http://127.0.0.1:{port}/detection_dashboard.html")
     print(f"   Network:  http://{local_ip}:{port}/detection_dashboard.html")
 
-    print("\n⏹️  Press Ctrl+C to stop the server")
+    print("\n Press Ctrl+C to stop the server")
     print("="*60)
 
 
