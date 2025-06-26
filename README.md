@@ -32,7 +32,7 @@ The system can detect 41 different classes including:
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/XavierPereira2003/DashCam-Analysis.git
 cd DashCam-Analysis
 ```
 
